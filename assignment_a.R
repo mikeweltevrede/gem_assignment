@@ -101,18 +101,22 @@ cycle_finder <- function(dataStart){
                             which(as.numeric(names(current_assignment)) == new_assigned[k]))
       }
       
-      selection <- -selection
+      selection <- -selection # What does this do?
       current_assignment <- current_assignment[selection]
       f <- f[selection]
+      
       for (k in 1:length(current_assignment)) { ### Reassign arrows and recheck cycles
         if (current_assignment[k] %in% new_assigned) {
-          current_assignment[k] <- preferences[as.numeric(names(current_assignment)[k]) , which(!preferences[as.numeric(names(current_assignment)[k]),] %in% assigned)][1]
+          # TODO: This can be neater (repeated indices)
+          current_assignment[k] <- 
+            preferences[as.numeric(names(current_assignment)[k]),
+                        which(!preferences[as.numeric(names(current_assignment)[k]),] %in% assigned)][1]
         }
       }
     } else {
       cycle_found <- F
     }
-  }## Else, go to step 3
+  } ## Else, go to step 3
   return(list('initial_assignment' = current_assignment,
               'preferences' = preferences,
               'final_assignment' = final_assignment,
@@ -120,6 +124,7 @@ cycle_finder <- function(dataStart){
               'f' = f,
               'w' = w))
 }
+
 iterate_data <- cycle_finder(iterate_data)
 
 # Step 3
