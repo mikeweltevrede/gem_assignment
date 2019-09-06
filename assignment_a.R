@@ -3,68 +3,73 @@
 # With chain selection (e)
 
 #### installing packages ####
-install.packages("readxl")
 library(readxl)
 
 #### importing the data ####
 import_data <- function(file_location) {
-  data <- read_excel(file_location)
-  preferences <- data[,-1] # select preferences; all data except for patient ID
-
-  #### Step 1 ####
-  # Initialise kidneys and living donors # Make patients point to kidneys
-  # TODO: Unhardcode this
-  patient_names <- lapply(as.list(data[,1]), as.character)$Patient
+  data <- readxl::read_excel(file_location, .name_repair = "minimal")
   
+  # Define the priority ordering f
+  f <- sort(data$Patient)
+  number_of_patients <- max(f)
+  
+  # Define which patient ID codes for the waiting list (maximum patient ID + 1)
+  w <- number_of_patients + 1
+  
+  colnames(data) <- append("Patient", as.character(1:w))
+  patient_names <- as.character(data$Patient)
+
+  # Define preference profiles; i.e. all data except for patient ID
+  preferences <- data[, -1]
+  rm(data) # Clean up; `data` is not needed in the rest of this function
+  
+  #### Step 1 ####
+  # Initialise kidneys and living donors
+  
+  # Make patients point to kidneys
   # TODO: Test if this can be done easier
-  initial_assignment <- t(preferences[,1]) # Initialise to first choice
+  initial_assignment <- t(preferences[, 1]) # Initialise to first choice
   names(initial_assignment) <- patient_names
   initial_assignment <- as.list(initial_assignment)
   
-  final_assignment <- t(as.matrix(rep(0, dim(data)[1]))) #set the final_assignment to 0
+  # Initialise the final_assignment to 0
+  # TODO: Test if this can be done easier
+  final_assignment <- t(as.matrix(rep(0, number_of_patients)))
   names(final_assignment) <- patient_names
   final_assignment <- as.list(final_assignment) 
   
-  # TODO: Give descriptive names
-  f <- 1:dim(data)[1] # Define the priority order f
-  w <- dim(preferences)[1] + 1 # Define which patient ID is the waiting list
+  # Initialise set of currently assigned kidneys
+  assigned <- c()
   
-  # TODO: Test this
-  # f_to_test <- sort(data$Patient)
-  # w_to_test <- max(data$Patient) # or perhaps hardcode to 150
-  
-  assigned <- c() # Initialise set of assigned kidneys
-  
-  return(list('initial_assignment' = initial_assignment,
-              'preferences' = preferences,
-              'final_assignment' = final_assignment,
-              'assigned' = assigned,
-              'f' = f, 
-              'w' = w))
+  return(list("f" = f,
+              "w" = w,
+              "preferences" = preferences,
+              "initial_assignment" = initial_assignment,
+              "final_assignment" = final_assignment,
+              "assigned" = assigned))
 }
 
-# TODO: Unhardcode this
-# iterate_data <- import_data(file_location="data/dataset7.xlsx")
-iterate_data <- import_data(file_location = "C:/Users/Joost/Desktop/gem_assignment-first_setup/dataset7.xlsx") #locatie pc joost
-# dataStart <- import_data(file_location="C:/Users/Joost/Desktop/gem_assignment-first_setup/dataset7.xlsx") #locatie pc mike
-# dataStart <- import_data(file_location="C:/Users/Joost/Desktop/gem_assignment-first_setup/dataset7.xlsx") #locatie pc steffie
+data <- import_data(file_location = "data/dataset7.xlsx")
 
 # Step 2
 # a
 # Check if cycle
-cycle_finder <- function(dataStart){
-  current_assignment <- dataStart$initial_assignment
-  preferences <- dataStart$preferences
-  final_assignment <- dataStart$final_assignment
-  assigned <- dataStart$assigned
-  f <- dataStart$f
-  w <- dataStart$w
+cycle_finder <- function(data){
+  f <- data$f
+  w <- data$w
+  preferences <- data$preferences
+  current_assignment <- data$initial_assignment
+  final_assignment <- data$final_assignment
+  assigned <- data$assigned
   
-  cycle_found <- T
+  rm(data) # Clean up; `data` is not needed in the rest of this function
+  
+  cycle_found <- T # Initialise
   
   while (cycle_found) {
     new_assigned <- c()
     no_cycle_found_so_far <- c(w)
+    
     for (i in 1:length(f)) {
       if (!f[i] %in% no_cycle_found_so_far) {
         current_chain <- c()
@@ -75,57 +80,65 @@ cycle_finder <- function(dataStart){
           j <- current_assignment[[as.character(j)]]
           
           if (j == w || j %in% no_cycle_found_so_far) {
-            no_cycle_found_so_far <- append(no_cycle_found_so_far, current_chain)
+            no_cycle_found_so_far <-
+              append(no_cycle_found_so_far, current_chain)
           }
           
           if (j %in% current_chain) {
-            cycle <- current_chain[which(current_chain == j):length(current_chain)]
+            cycle <-
+              current_chain[which(current_chain == j):length(current_chain)]
             
             for (k in 1:length(cycle)) {
               final_assignment[[cycle[k]]] <- current_assignment[[cycle[k]]]
             }
             
             new_assigned <- append(new_assigned, cycle)
-            no_cycle_found_so_far <- append(no_cycle_found_so_far, current_chain)
+            no_cycle_found_so_far <-
+              append(no_cycle_found_so_far, current_chain)
           }
         }
       }
     }
     
-    if (!is.null(new_assigned)) { ## If cycle, kick out all cycles
+    ## If cycle, kick out all cycles
+    if (!is.null(new_assigned)) {
       assigned <- append(assigned, new_assigned)
       selection <- c()
       
+      # TODO: This currently assumes that the patients are 1:end;
+      # make this to also recognise random numbers
       for (k in 1:length(new_assigned)) {
-        selection <- append(selection, 
-                            which(as.numeric(names(current_assignment)) == new_assigned[k]))
+        selection <-
+          append(selection, which(
+            as.numeric(names(current_assignment)) == new_assigned[k]))
       }
       
       selection <- -selection # What does this do?
       current_assignment <- current_assignment[selection]
       f <- f[selection]
       
-      for (k in 1:length(current_assignment)) { ### Reassign arrows and recheck cycles
+      # Reassign arrows and recheck cycles
+      for (k in 1:length(current_assignment)) {
         if (current_assignment[k] %in% new_assigned) {
           # TODO: This can be neater (repeated indices)
+          index <- as.numeric(names(current_assignment)[k])
           current_assignment[k] <- 
-            preferences[as.numeric(names(current_assignment)[k]),
-                        which(!preferences[as.numeric(names(current_assignment)[k]),] %in% assigned)][1]
+            preferences[index, which(!preferences[index, ] %in% assigned)][1]
         }
       }
     } else {
       cycle_found <- F
     }
   } ## Else, go to step 3
-  return(list('initial_assignment' = current_assignment,
-              'preferences' = preferences,
-              'final_assignment' = final_assignment,
-              'assigned' = assigned,
-              'f' = f,
-              'w' = w))
+  return(list("f" = f,
+              "w" = w,
+              "preferences" = preferences,
+              "current_assignment" = current_assignment,
+              "final_assignment" = final_assignment,
+              "assigned" = assigned))
 }
 
-iterate_data <- cycle_finder(iterate_data)
+data2 <- cycle_finder(data)
 
 # Step 3
 ## Check if there are pairs left
