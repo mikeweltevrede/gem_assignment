@@ -1,6 +1,8 @@
 # Assignment Games and Economic Models
 # Group 7
 # With chain selection (e)
+#### Clean environment
+rm()
 
 #### installing packages ####
 library(readxl)
@@ -9,6 +11,10 @@ library(bazar)
 #### importing the data ####
 import_data <- function(file_location) {
   data <- readxl::read_excel(file_location, .name_repair = "minimal")
+  if (colnames(data)[1]!="Patient"){
+    colnames(data)[1]<-"Patient"
+  }
+  
   
   # Define the priority ordering f
   f <- sort(data$Patient)
@@ -126,12 +132,10 @@ circle_finder <- function(data){
       if (!is.empty(current_assignment)){
       # Reassign arrows and recheck circles
       for (k in 1:length(current_assignment)) {
-        if (current_assignment[k] %in% new_assigned) {
-          # TODO: This can be neater (repeated indices)
-          index <- as.numeric(names(current_assignment)[k])
-          current_assignment[k] <- 
-            preferences[index, which(!preferences[index, ] %in% assigned)][1]
-        }
+        index.X <- as.numeric(names(current_assignment)[k])
+        index.Y<-!preferences[index.X, ] %in% assigned[which( ! assigned %in% available_kidneys)]
+        current_assignment[k] <- 
+          preferences[index.X, index.Y][1]
       }
       } else {
         circle_found <- F
@@ -255,7 +259,8 @@ w_finder <- function(data){
               "available_kidneys"=available_kidneys))
 }
 
-iterate_data <- import_data(file_location = "data/dataset7.xlsx")
+Exercise.a<-function(location){
+iterate_data <- import_data(file_location=location)
 f<-iterate_data$f
 
 while (!is.empty(f)) {
@@ -266,6 +271,9 @@ while (!is.empty(f)) {
   }
   f<-iterate_data$f
 }
-
-
-
+iterate_data$final_assignment[which(iterate_data$final_assignment==iterate_data$w)]<-"w"
+df.final<-data.frame(iterate_data$final_assignment)
+colnames(df.final)<-names(iterate_data$final_assignment)
+return(list("final_assignment"=df.final, "remaining.kidneys"=iterate_data$available_kidneys))
+}
+result<-Exercise.a(location="data/dataset7.xlsx")
