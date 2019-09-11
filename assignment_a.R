@@ -85,7 +85,6 @@ circle_finder <- function(data){
         while (!j %in% no_circle_found_so_far && !j %in% assigned) {
           current_chain <- append(current_chain, j)
           j <- current_assignment[[as.character(j)]]
-          
           if (j==w || j %in% no_circle_found_so_far) {
             no_circle_found_so_far <-
               append(no_circle_found_so_far, current_chain)
@@ -124,6 +123,7 @@ circle_finder <- function(data){
       current_assignment <- current_assignment[selection]
       f <- f[selection]
       
+      if (!is.empty(current_assignment)){
       # Reassign arrows and recheck circles
       for (k in 1:length(current_assignment)) {
         if (current_assignment[k] %in% new_assigned) {
@@ -132,6 +132,9 @@ circle_finder <- function(data){
           current_assignment[k] <- 
             preferences[index, which(!preferences[index, ] %in% assigned)][1]
         }
+      }
+      } else {
+        circle_found <- F
       }
     } else {
       circle_found <- F
@@ -231,19 +234,17 @@ w_finder <- function(data){
       selection <- -selection # What does this do?
       current_assignment <- current_assignment[selection]
       f <- f[selection]
-      
+    }  
     
     
     for (k in 1:length(current_assignment)){
-      if (current_assignment[k] %in% w_chain & !current_assignment[k] %in% available_kidneys){
-        # TODO: This can be neater (repeated indices)
+       # TODO: This can be neater (repeated indices)
         index.X <- as.numeric(names(current_assignment)[k])
         index.Y<-!preferences[index.X, ] %in% assigned[which( ! assigned %in% available_kidneys)]
         current_assignment[k] <- 
         preferences[index.X, index.Y][1]
-      }
     }
-    }
+    
     
   return(list("f" = f,
               "w" = w,
@@ -259,7 +260,10 @@ f<-iterate_data$f
 
 while (!is.empty(f)) {
   iterate_data<- circle_finder(iterate_data)
-  iterate_data<- w_finder(iterate_data)
+  f<-iterate_data$f
+  if(!is.empty(f)){
+    iterate_data<- w_finder(iterate_data) 
+  }
   f<-iterate_data$f
 }
 
