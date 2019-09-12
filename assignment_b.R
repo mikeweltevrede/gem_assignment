@@ -16,8 +16,8 @@ import_data <- function(file_location) {
   number_of_patients <- max(f)
   w <- number_of_patients + 1
 
-  colnames(data) <- append("Patient", as.character(1:w))
   patient_names <- as.character(data$Patient)
+  colnames(data) <- append("Patient", append(patient_names, w))
 
   # Define preference profiles; i.e. all data except for patient ID
   preferences <- data[, -1]
@@ -43,6 +43,7 @@ import_data <- function(file_location) {
 }
 
 data <- import_data(file_location = "data/dataset7.xlsx")
+data <- import_data(file_location = "data/test_mike.xlsx")
 
 ## Algorithm
 # Start;
@@ -51,11 +52,32 @@ data <- import_data(file_location = "data/dataset7.xlsx")
 # available option;
 
 # Find all cycles C;
-cycle_finder <- function(current_assignment){
-  return(c(0,1,2,3))
+cycle_finder <- function(data){
+  current_assignment = data$current_assignment
+  
+  w = data$w
+  for (i in c(1)) {
+#  for (i in 1:length(current_assignment)) {
+    
+    current_chain = c(current_assignment[i])
+    next_patient = current_assignment[as.character(current_assignment[i])]
+    
+    while (next_patient != w) {
+      current_chain = append(current_chain, next_patient)
+      next_patient = current_assignment[as.character(next_patient)]
+      
+      if (next_patient %in% names(current_chain)) {
+        # Cycle found
+        cycle = append(current_chain, next_patient)
+        break
+      }
+    }
+    print(cycle)
+  }
 }
 
-cycles = cycle_finder(data$current_assignment)
+
+cycles = cycle_finder(data)
 print(cycles)
 
 # Find the patient t with the highest priority in C with currently best
