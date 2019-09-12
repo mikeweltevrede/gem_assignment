@@ -123,7 +123,7 @@ circle_finder <- function(data){
       current_assignment <- current_assignment[selection]
       f <- f[selection]
       
-      if (!is.empty(current_assignment)){
+      if (!bazar::is.empty(current_assignment)){
       # Reassign arrows and recheck circles
       for (k in 1:length(current_assignment)) {
         if (current_assignment[k] %in% new_assigned) {
@@ -258,10 +258,10 @@ w_finder <- function(data){
 iterate_data <- import_data(file_location = "data/dataset7.xlsx")
 f<-iterate_data$f
 
-while (!is.empty(f)) {
+while (!bazar::is.empty(f)) {
   iterate_data<- circle_finder(iterate_data)
   f<-iterate_data$f
-  if(!is.empty(f)){
+  if(!bazar::is.empty(f)){
     iterate_data<- w_finder(iterate_data) 
   }
   f<-iterate_data$f
