@@ -36,6 +36,12 @@
       "Source": "CRAN",
       "Hash": "2a78bf0825e0088e117520553ceb7fa5"
     },
+    "bazar": {
+      "Package": "bazar",
+      "Version": "1.0.11",
+      "Source": "CRAN",
+      "Hash": "802161859424b70ad41ec7422c30845c"
+    },
     "cellranger": {
       "Package": "cellranger",
       "Version": "1.1.0",
@@ -47,6 +53,12 @@
       "Version": "1.1.0",
       "Source": "CRAN",
       "Hash": "9b3dc7798f53ba3050b41ce4a3febdc5"
+    },
+    "codetools": {
+      "Package": "codetools",
+      "Version": "0.2-16",
+      "Source": "CRAN",
+      "Hash": "3bf2a0853d7faf7f865d0b877946e452"
     },
     "crayon": {
       "Package": "crayon",
@@ -84,11 +96,23 @@
       "Source": "CRAN",
       "Hash": "5c9cbb0d6f49109be1a771d963801847"
     },
+    "kimisc": {
+      "Package": "kimisc",
+      "Version": "0.4",
+      "Source": "CRAN",
+      "Hash": "3946666aed50490bfef992e573268a4e"
+    },
     "magrittr": {
       "Package": "magrittr",
       "Version": "1.5",
       "Source": "CRAN",
       "Hash": "dee1d97cffddfd3ed969e224bd0826d0"
+    },
+    "memoise": {
+      "Package": "memoise",
+      "Version": "1.1.0",
+      "Source": "CRAN",
+      "Hash": "22ca9b285c10f5dd8c4d1e90231ce558"
     },
     "pillar": {
       "Package": "pillar",
@@ -102,6 +126,12 @@
       "Source": "CRAN",
       "Hash": "2dd2d8867e4f0173ea2ce029d630a086"
     },
+    "plyr": {
+      "Package": "plyr",
+      "Version": "1.8.4",
+      "Source": "CRAN",
+      "Hash": "37dd0f3aadee2ac99e47168f4bffddb7"
+    },
     "prettyunits": {
       "Package": "prettyunits",
       "Version": "1.0.2",
@@ -113,6 +143,12 @@
       "Version": "1.2.2",
       "Source": "CRAN",
       "Hash": "e8c47e04650b07d40c3c50a878a4dffa"
+    },
+    "pryr": {
+      "Package": "pryr",
+      "Version": "0.1.4",
+      "Source": "CRAN",
+      "Hash": "72c7a6b374c672148bd89a73a55f54ff"
     },
     "readxl": {
       "Package": "readxl",
@@ -137,6 +173,18 @@
       "Version": "0.4.0",
       "Source": "CRAN",
       "Hash": "8f1bf3a54c8844dc254baabba61cb6a9"
+    },
+    "stringi": {
+      "Package": "stringi",
+      "Version": "1.4.3",
+      "Source": "CRAN",
+      "Hash": "113506f116db9dd5bd1caf46884e0647"
+    },
+    "stringr": {
+      "Package": "stringr",
+      "Version": "1.4.0",
+      "Source": "CRAN",
+      "Hash": "41d6310ad18bd019a203d7adc496a28b"
     },
     "tibble": {
       "Package": "tibble",
