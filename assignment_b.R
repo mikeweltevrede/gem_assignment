@@ -43,20 +43,20 @@ import_data <- function(file_location) {
               "available_kidneys" = c()))
 }
 
-# Find all cycles C;
-cycle_finder <- function(data){
+# Find all circles C;
+circle_finder <- function(data){
   current_assignment = data$current_assignment
   w = data$w
-  cycles = list()
+  circles = list()
   assigned_patients = c()
   
-  # for (i in c(1)) {
   for (i in 1:length(current_assignment)) {
-    
+    already_found = FALSE
+
     if (i %in% assigned_patients) {
       next
     }
-    
+
     # Start a chain
     current_chain = c(current_assignment[i])
     
@@ -73,8 +73,8 @@ cycle_finder <- function(data){
     
     if (points_to == names(current_assignment)[i]) {
       # Then the patient points to themselves, assign this
-      cycle = current_chain
-      cycles = c(cycles, list(cycle))
+      circle = current_chain
+      circles = c(circles, list(circle))
       assigned_patients = append(assigned_patients, as.character(points_to))
       next
     }
@@ -83,36 +83,62 @@ cycle_finder <- function(data){
     next_patient = current_assignment[points_to]
     
     while (next_patient != w) {
+      
+      if (next_patient %in% unlist(circles)) {
+        # This will lead to a cycle already found before
+        already_found = TRUE
+        break
+      }
+      
       if (next_patient %in% names(current_chain)) {
-        # Cycle found
-        cycle = append(current_chain, next_patient)
-        assigned_patients = append(assigned_patients,
-                                   as.character(unique(cycle)))
+        
+        # Circle found
+        
+        # Check where it is linked to, don't keep the patients before this
+        starting_index = which(next_patient == names(current_chain))
+        
+        circle = append(current_chain[starting_index:length(current_chain)],
+          next_patient)
+        
+        assigned_patients = append(assigned_patients, unique(names(circle)))
+
         break
       }
       
       # Extend chain with the patient that is being pointed to
       current_chain = append(current_chain, next_patient)
       
+      # print("current chain 2")
+      # print(current_chain)
+      # print("-----")
+      
       # Find patient that the this next patient prefers
       next_patient = current_assignment[as.character(next_patient)]
+      
+      # print("next patient 2")
+      # print(next_patient)
+      # print("-----")
     }
     # Here, next_patient will be w
     # TODO: Can we do something with this?
     
-    # Append new cycle to set of known cycles
-    cycles = c(cycles, list(cycle))
+    if (already_found) {
+      # Don't append this cycle!
+      next
+    }
+
+    circles = c(circles, list(circle))
   }
-  return(list("cycles" = cycles,
+  return(list("circles" = circles,
               "assigned_patients" = assigned_patients))
 }
 
-cycle_assigner = function(final_assignment = list(), cycles) {
-  # Assign cycles
+circle_assigner = function(final_assignment = list(), circles) {
+  # Assign circles
   
-  for (cycle in cycles) {
+  for (circle in circles) {
     # Assign to final_assignment
-    final_assignment = append(final_assignment, cycle)
+    final_assignment = append(final_assignment, circle)
   }
   
   return(final_assignment)
@@ -148,14 +174,14 @@ preference_updater = function(preferences, assigned_patients, patient_names,
 }
 
 # Write the HPBM Algorithm
-hpbm = function(cycles, preferences, assigned_patients, patient_names,
+hpbm = function(circles, preferences, assigned_patients, patient_names,
                 current_assignment, final_assignment, f, w, available_kidneys) {
   
   preferences_old = preferences
   
-  # Cycles is a list of list with too long cycles
-  patients_in_cycles = unique(names(unlist(cycles)))
-  candidates = patients_in_cycles
+  # circles is a list of list with too long circles
+  patients_in_circles = unique(names(unlist(circles)))
+  candidates = patients_in_circles
   
   # Return here
   while (TRUE) {
@@ -173,7 +199,7 @@ hpbm = function(cycles, preferences, assigned_patients, patient_names,
       preferences = preferences_old
       candidates = candidates[-1]
       
-    } else if (p_prime %in% available_kidneys){
+    } else if (p_prime %in% available_kidneys) {
       # Available kidneys
       
       final_assignment = append(final_assignment, p_prime)
@@ -182,24 +208,25 @@ hpbm = function(cycles, preferences, assigned_patients, patient_names,
       # TODO!!!!!!!!!
       
     } else {
-      # Find cycles
+      # Find circles
       my_data = list("current_assignment" = current_assignment, "w" = w)
-      result = cycle_finder(my_data)
-      cycles = result$cycles
+      # TODO: Make this better?
+      result = circle_finder(my_data)
+      circles = result$circles
       
-      if (t %in% unique(names(unlist(cycles)))) {
-        t_cycles = cycles[sapply(cycles, function(x) {t %in% names(x)})]
-        cycle_lengths = sapply(t_cycles, length)
+      if (t %in% unique(names(unlist(circles)))) {
+        t_circles = circles[sapply(circles, function(x) {t %in% names(x)})]
+        circle_lengths = sapply(t_circles, length)
         
-        # And find cycles that obey the capacity constraint
-        correct_index = which(cycle_lengths <= q)
-        correct_cycles = cycles[correct_index]
+        # And find circles that obey the capacity constraint
+        correct_index = which(circle_lengths <= q)
+        correct_circles = circles[correct_index]
         
-        if (length(correct_cycles) > 0) {
-          final_assignment = cycle_assigner(final_assignment, correct_cycles)
+        if (length(correct_circles) > 0) {
+          final_assignment = circle_assigner(final_assignment, correct_circles)
           
           # And kick them out / update preferences
-          assigned_patients = names(unlist(correct_cycles))
+          assigned_patients = names(unlist(correct_circles))
           update = preference_updater(preferences, assigned_patients, patient_names)
           preferences = update$preferences
           current_assignment = update$current_assignment
@@ -230,54 +257,54 @@ w = data$w
 
 ## Algorithm
 # Start;
-q = 3 # Unhardcode, function?
+q = 100 # Unhardcode, function?
 
 # Reassign preferences for non-assigned patients to the most preferred
 # available option;
 # TODO -> Check, see function preference_updater
 
 # Go here after HPBM is successful
-result = cycle_finder(data)
+result = circle_finder(data)
 assigned_patients = result$assigned_patients
-cycles = result$cycles
+circles = result$circles
 
 # TODO: Remove
 assigned_patients = c()
 
-while (length(cycles) > 0) {
-  # Then cycles exist; calculate lengths of these cycles...
-  cycle_lengths = sapply(cycles, length)
+while (length(circles) > 0) {
+  # Then circles exist; calculate lengths of these circles...
+  circle_lengths = sapply(circles, length)
   
-  # And find cycles that obey the capacity constraint
-  correct_index = which(cycle_lengths <= q)
-  correct_cycles = cycles[correct_index]
+  # And find circles that obey the capacity constraint
+  correct_index = which(circle_lengths <= q)
+  correct_circles = circles[correct_index]
 
-  if (length(correct_cycles) > 0) {
-    # There are correct cycles, assign these
-    final_assignment = cycle_assigner(final_assignment, correct_cycles)
+  if (length(correct_circles) > 0) {
+    # There are correct circles, assign these
+    final_assignment = circle_assigner(final_assignment, correct_circles)
     
     # And kick them out / update preferences
-    assigned_patients = names(unlist(correct_cycles))
+    assigned_patients = names(unlist(correct_circles))
     update = preference_updater(preferences, assigned_patients, patient_names)
     preferences = update$preferences
     current_assignment = update$current_assignment
     
-    # Update cycles variable; remove assigned cycles
-    cycles = cycles[-correct_index]
+    # Update circles variable; remove assigned circles
+    circles = circles[-correct_index]
     # TODO: Move into function? See also hpbm
     
   } else {
-    # Then there are cycles, but these are all too long
+    # Then there are circles, but these are all too long
     # TODO: Apply HPBM
     # print("HPBM")
-    # print("Deleting first cycle for testing purposes")
-    # final_assignment = cycle_assigner(final_assignment, cycles[-1])
+    # print("Deleting first circle for testing purposes")
+    # final_assignment = circle_assigner(final_assignment, circles[-1])
     # update = preference_updater(preferences, assigned_patients, patient_names) # TODO
     # preferences = update$preferences
     # current_assignment = update$current_assignment
     # 
-    # # Update cycles variable; remove assigned cycles
-    # cycles = cycles[-1]
+    # # Update circles variable; remove assigned circles
+    # circles = circles[-1]
     break
   }
     
@@ -290,7 +317,7 @@ if (FALSE) {
   # Just to avoid error
   # TODO: Remove
 } else {
-  # There are no cycles at all
+  # There are no circles at all
   # TODO: look at w-chains
 }
 
@@ -303,12 +330,12 @@ if (FALSE) {
 
 # What if p_t^∗ is an available kidney?
 
-# while cycles exist do
+# while circles exist do
 
   # Step X;
 
-  # while cycles of length less than or equal to q exist do
-    # Assign patients in the cycle accordingly;
+  # while circles of length less than or equal to q exist do
+    # Assign patients in the circle accordingly;
 
     # Remove assigned patients from the patient list;
 
@@ -332,7 +359,7 @@ if (FALSE) {
     # Remove t from patient list;
     # Return to Start;
   # else
-    # Find all cycles;
+    # Find all circles;
     # Go to Step X
 
 # w chains
