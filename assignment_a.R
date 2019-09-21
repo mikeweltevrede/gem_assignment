@@ -11,9 +11,6 @@ library(bazar)
 #### importing the data ####
 import_data <- function(file_location) {
   data <- readxl::read_excel(file_location, .name_repair = "minimal")
-  # if (colnames(data)[1]!="Patient"){
-  #   colnames(data)[1]<-"Patient"
-  # }
   colnames(data)[1]<-"Patient"
   
   # Define the priority ordering f
@@ -262,18 +259,29 @@ w_finder <- function(data){
 Exercise.a<-function(location){
   iterate_data <- import_data(file_location=location)
   f<-iterate_data$f
-  
+
   while (!is.empty(f)) {
     iterate_data<- circle_finder(iterate_data)
     f<-iterate_data$f
-    if(!is.empty(f)){
-      iterate_data<- w_finder(iterate_data) 
+    
+    while (!is.empty(f)) {
+      iterate_data<- circle_finder(iterate_data)
+      f<-iterate_data$f
+      if(!is.empty(f)){
+        iterate_data<- w_finder(iterate_data) 
+      }
+      f<-iterate_data$f
     }
-    f<-iterate_data$f
+    iterate_data$final_assignment[which(iterate_data$final_assignment==iterate_data$w)] <- "w"
+    df.final<-data.frame(iterate_data$final_assignment)
+    colnames(df.final)<-names(iterate_data$final_assignment)
+    return(list("final_assignment"=df.final, "remaining.kidneys"=iterate_data$available_kidneys))
   }
-  iterate_data$final_assignment[which(iterate_data$final_assignment==iterate_data$w)]<-"w"
+  
+  iterate_data$final_assignment[which(iterate_data$final_assignment==iterate_data$w)] <- "w"
   df.final<-data.frame(iterate_data$final_assignment)
   colnames(df.final)<-names(iterate_data$final_assignment)
   return(list("final_assignment"=df.final, "remaining.kidneys"=iterate_data$available_kidneys))
 }
+
 result<-Exercise.a(location="data/dataset7.xlsx")
