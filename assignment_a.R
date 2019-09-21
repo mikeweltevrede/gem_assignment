@@ -11,7 +11,7 @@ library(bazar)
 #### importing the data ####
 import_data <- function(file_location) {
   data <- readxl::read_excel(file_location, .name_repair = "minimal")
-  colnames(data)[1]<-"Patient"
+  colnames(data)[1] <- "Patient"
   
   # Define the priority ordering f
   f <- sort(data$Patient)
@@ -44,7 +44,7 @@ import_data <- function(file_location) {
   
   # Initialise set of currently assigned kidneys
   assigned <- c()
-  available_kidneys<-c()
+  available_kidneys <- c()
   
   return(list("f" = f,
               "w" = w,
@@ -52,14 +52,9 @@ import_data <- function(file_location) {
               "current_assignment" = current_assignment,
               "final_assignment" = final_assignment,
               "assigned" = assigned,
-              "available_kidneys"=available_kidneys))
+              "available_kidneys" = available_kidneys))
 }
 
-
-
-# Step 2
-# a
-# Check if circle
 # Step 2
 # a
 # Check if circle
@@ -70,7 +65,7 @@ circle_finder <- function(data){
   current_assignment <- data$current_assignment
   final_assignment <- data$final_assignment
   assigned <- data$assigned
-  available_kidneys<-data$available_kidneys
+  available_kidneys <- data$available_kidneys
   
   rm(data) # Clean up; `data` is not needed in the rest of this function
   
@@ -88,7 +83,7 @@ circle_finder <- function(data){
         while (!j %in% no_circle_found_so_far && !j %in% assigned) {
           current_chain <- append(current_chain, j)
           j <- current_assignment[[as.character(j)]]
-          if (j==w || j %in% no_circle_found_so_far) {
+          if (j == w || j %in% no_circle_found_so_far) {
             no_circle_found_so_far <-
               append(no_circle_found_so_far, current_chain)
           }
@@ -98,7 +93,8 @@ circle_finder <- function(data){
               current_chain[which(current_chain == j):length(current_chain)]
             
             for (k in 1:length(circle)) {
-              final_assignment[[as.character(circle[k])]] <- current_assignment[[as.character(circle[k])]]
+              final_assignment[[as.character(circle[k])]] <-
+                current_assignment[[as.character(circle[k])]]
             }
             
             new_assigned <- append(new_assigned, circle)
@@ -126,11 +122,11 @@ circle_finder <- function(data){
       current_assignment <- current_assignment[selection]
       f <- f[selection]
       
-      if (!is.empty(current_assignment)){
+      if (!bazar::is.empty(current_assignment)) {
         # Reassign arrows and recheck circles
         for (k in 1:length(current_assignment)) {
           index.X <- as.numeric(names(current_assignment)[k])
-          index.Y<-!preferences[index.X, ] %in% assigned[which( ! assigned %in% available_kidneys)]
+          index.Y <- !preferences[index.X, ] %in% assigned[which(!assigned %in% available_kidneys)]
           current_assignment[k] <- 
             preferences[index.X, index.Y][1]
         }
@@ -147,7 +143,7 @@ circle_finder <- function(data){
               "current_assignment" = current_assignment,
               "final_assignment" = final_assignment,
               "assigned" = assigned,
-              "available_kidneys"=available_kidneys))
+              "available_kidneys" = available_kidneys))
 }
 
 # Step 3
@@ -155,9 +151,6 @@ circle_finder <- function(data){
 ### Stop
 ## Else, find w-chain according to (e)
 ## Repeat 2 and 3
-
-
-
 w_finder <- function(data){
   f <- data$f
   w <- data$w
@@ -165,16 +158,16 @@ w_finder <- function(data){
   current_assignment <- data$current_assignment
   final_assignment <- data$final_assignment
   assigned <- data$assigned
-  available_kidneys<-data$available_kidneys
+  available_kidneys <- data$available_kidneys
   
   rm(data) # Clean up; `data` is not needed in the rest of this function
   
   #search the w_chain
   w_chain <- c()
-  new_assigned<-c()
-  Already_checked<- c(w)
-  first_of_w_chain<-w
-  for (i in 1:length(f)){
+  new_assigned <- c()
+  Already_checked <- c(w)
+  first_of_w_chain <- w
+  for (i in 1:length(f)) {
     if (!f[i] %in% Already_checked) {
       current_chain <- c()
       j <- f[i]
@@ -183,42 +176,42 @@ w_finder <- function(data){
         current_chain <- append(current_chain, j)
         j <- current_assignment[[as.character(j)]]
         
-        if (j==w || j %in% Already_checked) {
+        if (j == w || j %in% Already_checked) {
           Already_checked <-
             append(Already_checked, current_chain)
         }
         
-        if(j %in% available_kidneys){
-          index<-which(available_kidneys==j)
-          available_kidneys[index]<-current_chain[1]
+        if (j %in% available_kidneys) {
+          index <- which(available_kidneys == j)
+          available_kidneys[index] <- current_chain[1]
           for (k in 1:length(current_chain)) {
-            final_assignment[[as.character(current_chain[k])]] <- current_assignment[[as.character(current_chain[k])]]
+            final_assignment[[as.character(current_chain[k])]] <-
+              current_assignment[[as.character(current_chain[k])]]
           }
-          new_assigned<-append(new_assigned,current_chain)
-          Already_checked <-
-            append(Already_checked, current_chain)
+          new_assigned <- append(new_assigned,current_chain)
+          Already_checked <- append(Already_checked, current_chain)
         }
         
-        if(j == first_of_w_chain){
-          w_chain<-append(current_chain, w_chain)
-          if(w != first_of_w_chain){
-            Already_checked <-
-              append(Already_checked, current_chain)
+        if (j == first_of_w_chain) {
+          w_chain <- append(current_chain, w_chain)
+          if (w != first_of_w_chain) {
+            Already_checked <- append(Already_checked, current_chain)
           }
-          first_of_w_chain<-w_chain[1]
+          first_of_w_chain <- w_chain[1]
         }
       }
     }
   }
-  if (!is.null(w_chain)){
+  if (!is.null(w_chain)) {
     for (k in 1:length(w_chain)) {
-      final_assignment[[as.character(w_chain[k])]] <- current_assignment[[as.character(w_chain[k])]]
+      final_assignment[[as.character(w_chain[k])]] <-
+        current_assignment[[as.character(w_chain[k])]]
     }
-    if (w!=first_of_w_chain){
-      available_kidneys<-append(available_kidneys, first_of_w_chain) 
+    if (w != first_of_w_chain) {
+      available_kidneys <- append(available_kidneys, first_of_w_chain) 
     }
   }
-  new_assigned<-append(new_assigned,w_chain)
+  new_assigned <- append(new_assigned,w_chain)
   
   if (!is.null(new_assigned)) {
     assigned <- append(assigned, new_assigned)
@@ -238,14 +231,14 @@ w_finder <- function(data){
   }  
   
   
-  for (k in 1:length(current_assignment)){
+  for (k in 1:length(current_assignment)) {
     # TODO: This can be neater (repeated indices)
     index.X <- as.numeric(names(current_assignment)[k])
-    index.Y<-!preferences[index.X, ] %in% assigned[which( ! assigned %in% available_kidneys)]
+    index.Y <- !preferences[index.X, ] %in% assigned[
+      which(!assigned %in% available_kidneys)]
     current_assignment[k] <- 
       preferences[index.X, index.Y][1]
   }
-  
   
   return(list("f" = f,
               "w" = w,
@@ -253,35 +246,39 @@ w_finder <- function(data){
               "current_assignment" = current_assignment,
               "final_assignment" = final_assignment,
               "assigned" = assigned,
-              "available_kidneys"=available_kidneys))
+              "available_kidneys" = available_kidneys))
 }
 
-Exercise.a<-function(location){
-  iterate_data <- import_data(file_location=location)
-  f<-iterate_data$f
+Exercise.a <- function(location){
+  iterate_data <- import_data(file_location = location)
+  f <- iterate_data$f
 
-  while (!is.empty(f)) {
-    iterate_data<- circle_finder(iterate_data)
-    f<-iterate_data$f
+  while (!bazar::is.empty(f)) {
+    iterate_data <- circle_finder(iterate_data)
+    f <- iterate_data$f
     
-    while (!is.empty(f)) {
-      iterate_data<- circle_finder(iterate_data)
-      f<-iterate_data$f
-      if(!is.empty(f)){
-        iterate_data<- w_finder(iterate_data) 
+    while (!bazar::is.empty(f)) {
+      iterate_data <- circle_finder(iterate_data)
+      f <- iterate_data$f
+      if (!bazar::is.empty(f)) {
+        iterate_data <- w_finder(iterate_data) 
       }
-      f<-iterate_data$f
+      f <- iterate_data$f
     }
-    iterate_data$final_assignment[which(iterate_data$final_assignment==iterate_data$w)] <- "w"
-    df.final<-data.frame(iterate_data$final_assignment)
-    colnames(df.final)<-names(iterate_data$final_assignment)
-    return(list("final_assignment"=df.final, "remaining.kidneys"=iterate_data$available_kidneys))
+    iterate_data$final_assignment[
+      which(iterate_data$final_assignment == iterate_data$w)] <- "w"
+    df.final <- data.frame(iterate_data$final_assignment)
+    colnames(df.final) <- names(iterate_data$final_assignment)
+    return(list("final_assignment" = df.final,
+                "remaining.kidneys" = iterate_data$available_kidneys))
   }
   
-  iterate_data$final_assignment[which(iterate_data$final_assignment==iterate_data$w)] <- "w"
-  df.final<-data.frame(iterate_data$final_assignment)
-  colnames(df.final)<-names(iterate_data$final_assignment)
-  return(list("final_assignment"=df.final, "remaining.kidneys"=iterate_data$available_kidneys))
+  iterate_data$final_assignment[
+    which(iterate_data$final_assignment == iterate_data$w)] <- "w"
+  df.final <- data.frame(iterate_data$final_assignment)
+  colnames(df.final) <- names(iterate_data$final_assignment)
+  return(list("final_assignment" = df.final,
+              "remaining.kidneys" = iterate_data$available_kidneys))
 }
 
-result<-Exercise.a(location="data/dataset7.xlsx")
+result <- Exercise.a(location = "data/dataset7.xlsx")
