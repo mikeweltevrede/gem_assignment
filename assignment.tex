@@ -1,0 +1,418 @@
+\documentclass{article}
+
+%Packages
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage[ruled]{algorithm2e}
+
+\usepackage{booktabs}
+
+\usepackage[shadow]{todonotes}
+
+\usepackage[english]{babel}
+\usepackage{float}
+\usepackage{footmisc}
+\usepackage{verbatim}
+
+\usepackage{hyperref}
+\hypersetup{linktoc=all}
+
+\newcommand{\norm}[1]{\lVert #1 \rVert}
+
+%\renewcommand{\familydefault}{\sfdefault}
+
+%\setcounter{secnumdepth}{0}
+
+\title{Games and Economic Models \\ Assignment 1, Case 7}
+\author{Mike Weltevrede (ANR: 756479, SNR: 1257560)\\Joost Westland (ANR: 249306, SNR: 1264797)\\Steffie van Poppel (ANR: 284735, SNR: 2031218)}
+\date{September 23, 2019}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\listoftodos
+
+\todo[inline]{Make pdf of code}
+
+\newpage
+\section{Question a}
+For this exercise we have written a script in R to execute the TTCC algorithm with chain selection rule (e). The pseudocode is found in Algorithm \ref{TTCC e}. The algorithm is split into several Algorithm environments to improve readability: an importing data part (Algorithm \ref{alg:importdata}), a cycle founder part(algorithm \ref{Cycles.a}) and w chain founder part(algorithm \ref{wchain}). The entire algorithm can be seen as follows\\
+
+\begin{algorithm}[H]{
+    Start\;
+    Import $iterated\_data$ using Algorithm \ref{Importdata}
+    \BlankLine
+    \While{patients exists that are not assigned to a kidney($f$ in $iterated\_data$ is nonempty)}{
+    	Update $iterated\_data$ while searching for cycles using algorithm \ref{Cycles.a}\;
+    	\uIf{patients exists that are not assigned to a kidney}{
+    	Update $iterated\_data$ while searching for the w\-chain with the highest priority using algorithm \ref{wchain}\;
+    	}
+    }
+    Transform $final_assignment$ to a clear table containing symbol "w" instead of the numerical variable\;
+    Return $final\_assignment$ and the $available\_kidneys$\;
+    }
+\caption{TTCC algorithm with chain selection rule (e)  \label{TTCC e}}
+\end{algorithm}
+
+\begin{algorithm}[H]{
+    Import $data$ from Excel\;
+    \uIf{First column name does not equal "Patient"}{
+    	Change the column name to "Patient"
+    }
+    Create priority ordering $f$\;
+    Assign $\max(f)+1$ to $w$, the number of the waiting list\;
+    Assign $preferences$\;
+    Create $current\_assignment$ in which each patient points to their currently favourite preference\;
+    Create $final\_assignment$ where we shall store the final result\;
+    Initialise $assigned$ (already assigned patients) and $available\_kidneys$ as empty\;
+    Store all variables in a list called $iterated\_data$\;
+    Return $iterated\_data$\;
+    }
+    \caption{Import data for Algorithm \ref{TTCC e} \label{alg:importdata}}
+\end{algorithm}
+
+\newpage
+
+\begin{algorithm}[H]{
+Retrieve all variables from $iterated\_data$\;
+Assign "True" to $circle\_found$, which is true when cycles could exist\;
+
+\While{$circle\_found$ is "True"}{
+    Create empty storage $new\_assigned$\;
+    Create storage $no\_circle\_found\_so\_far$ which only contains value $w$\;
+    
+    \For{all entries of $f$}{
+    	\uIf{Current entry of $f$ is not in $no\_circle\_found\_so\_far$}{
+    		Create empty storage $current\_chain$\;
+    		Assign the patient in the current entry of $f$ to $j$\;
+    
+    		\While{$j$ is not in $assigned$ and not in $no\_circle\_found\_so\_far$}{
+    			Add $j$ to $current\_chain$\;
+    			From $current\_assignment$ we select the kidney of patient $j$, the patient that owns this kidney becomes $j$\;
+    
+    			\uIf{$j$ is $w$ or j is in $no\_circle\_found\_so\_far$}{
+    				Add $current\_chain$ to $no\_circle\_found\_so\_far$\;
+    			}
+    			\uIf{$j$ indicates a cycle (j is in $current\_chain$)}{
+    				Select the $cycle$ \;
+    				Update $final\_assignment$ for all entries in $cycle$ \;
+    				Add $cycle$ to $new\_assigned$\;
+    				Add $current\_chain$ to $no\_circle\_found\_so\_far$\;
+    			}
+    		}
+    	}
+    }
+    
+	\uIf{cycles are found ($new\_assigned$ is not empty)}{
+		Add $new\_assigned$ to $assigned$ \;
+		Delete from $f$ and $current\_assignment$ all patients that are in $assigned$\;
+			
+		\uIf{$current\_assignment$ is not empty}{
+			Update for all patients $current\_assignment$ and $preferences$.\;
+			The remaining patients cannot longer select a kidney that is in $Assigned$ and not in $available\_kidneys$\;
+		}\Else{
+ 			Assign "False" to $circle\_found$
+		}
+	}\Else{
+		Assign "False" to $circle\_found$
+	}
+}
+
+Store $f$, $w$, $preferences$, $current\_assignment$, $final\_assignment$ and $available\_kidneys$ in $iterated\_data$\;
+Return$iterated\_data$\;
+}
+\caption{Search for cycles in the $iterated\_data$ of Algorithm \ref{TTCC e} \label{Cycles.a}}
+\end{algorithm}
+
+\begin{algorithm}[H]{
+Retrieve all variables from $iterated\_data$\;
+Create empty storages  $new\_assigned$ and $w\_chain$\;
+Create storage $Already\_checked$ which only contains value $w$\;
+Set scalar $first\_of\_w\_chain$ to $w$    
+
+\For{all entries of $f$}{
+	\uIf{Current entry of $f$ is not in $Already\_checked$}{
+		Create empty storage $current\_chain$\;
+		Assign the patient in the current entry of $f$ to $j$\;
+
+		\While{$j$ is not in $Assigned$ and not in $Already\_checked$}{
+    		Add $j$ to $current\_chain$\;
+    		From $current\_assignment$ we select the kidney of patient $j$, the patient that owns this kidney becomes $j$\;
+    
+    		\uIf{$j$ is $w$ or $j$ is in $Already\_checked$}{
+    			Add $current\_chain$ to $Already\_checked$\;
+    		}
+    
+    		\uIf{$j$ in  $available\_kidneys$}{
+    			Update $available\_kidneys$ such that it contains the kidneys that are not assigned while the corresponding patients are already assigned\;
+    			Update $final\_assignment$ such that it contains the entire w chain that we have found so far\;
+    			Add $current\_chain$ to $new\_assigned$ and $Already\_checked$\;
+    		}
+    
+    		\uIf{$j$ is equal to $first\_of\_w\_chain$}{
+    			Update $w\_chain$ with including $current\_chain$\;
+    
+    			\uIf{$w$ is unequal to $first\_of\_w\_chain$}{
+    				Add $current\_chain$ to $Already\_checked$\;
+    			}
+    			
+    			Update $first\_of\_w\_chain$ with the new first entry of $w\_chain$
+    			}
+    	}
+    }
+}
+
+\uIf{Highest priority w chain is found ($w\_chain$ is not empty)}{
+Update $final\_assignment$ with $w\_chain$\;
+\uIf{$w$ not equal to $first\_of\_w\_chain$}{
+Add $first\_of\_w\_chain$ to $available\_kidneys$\;
+}
+}
+Add $w\_chain$ to $new\_assigned$ \;
+\uIf{$new\_assigned$ is not empty}{
+Add $new\_assigned$ to $Assigned$ \;
+Delete from $f$ and $current\_assignment$ all patients that are assigned\;
+}
+\uIf{$current\_assignment$ is not empty}{
+Update for all patients $current\_assignment$ and preferences. The remaining patients cannot longer select a kidney that is in $Assigned$ and not in $available\_kidneys$\;
+}
+Store $f$, $w$, $preferences$, $current\_assignment$, $final\_assignment$ and $available\_kidneys$ in $iterated\_data$ and return $iterated\_data$\;
+}
+ \caption{Search for the $w$ chain with the highest priority in the $iterated\_data$ of Algorithm \ref{TTCC e} \label{wchain}}   
+\end{algorithm}
+for this source code we find the assignments that are placed in table \ref{final.a} which can be found in the appendix. The kidneys that remain according to our algorithm are kidney $4$ and kidney $118$.
+
+\section{Question b}
+\subsection{Method}
+In light of practical reasons, it can be so that cycles cannot be larger than some capacity $q$. For example, there are not enough surgeons available. To circumvent this problem, we propose the \textbf{highest priority-breaking method (HPBM)} for TTCC.
+
+\noindent Consider the TTCC algorithm that, at some stage $i$, finds a set of cycles $C = {c_1, .... c_m}$ with $\norm{c_i} > q$ for all $i$. Denote the patient with the highest priority in $C$ as $t$ and denote their current preference by $p_t$. The HPBM changes the preference from patient $t$ and assigns it to their next highest preference, say $p_t'$.
+\begin{itemize}
+    \item If $p_t' \neq w$ and $p_t'$ is not an \textit{available kidney}\footnote{By available kidneys, we mean leftover kidneys that became available after assigning patients to the $w$-chains}, check if there is a cycle created with $t$ in it of length $q$ or less. If so, take out this cycle as you would and restart the process. If not, change the preference from patient $t$ again, say to $p''$, and so on.
+    \item If $p' = w$, then there is no cycle of length smaller or equal to $q$ with patient $t$ found in this iteration. The preference of patient $t$ will be reset to its higher preference possible, since there might arise new cycles, since patients have to point towards other kidneys due to the removal of other cycles. Hence, by resetting patient $t$ gets to change of avoiding the waiting list. After resetting we move on to the next patient in $C$ that has the highest priority after $t$, say $t'$. Since there are only cycles of lengths bigger than $q$. The process of breaking preference will be repeated for $t'$ and so on.
+    \item If $p'$ is an \textit{available kidney}, then $p'$ is assigned to $t$. Afterwards, the preferences of the remaining patients are reassigned accordingly. Since in now, patients and kidneys are removed we have to search for new cycles, possibly of allowable length.
+\end{itemize}
+
+\subsection{Philosophy}
+The thought behind the HPBM is that a person that is higher on the priority list is a patient that has a higher need to get a kidney transplantation. Following this, it seems like comparatively more time and resources should be spent on this patient over those lower on the priority list. As such, we would like to assign a kidney to this patient as soon as possible and this is done by exploring their preferences until a proper match is found. Of course, one might argue that the breaking-process might lead to a kidney which is very low preferred. Nevertheless, the patient would in that case get a transplantation, which is always better than ending up on the waiting list. The chances of ending up on the waiting list a considerably lower when using this method compared to e.g. start breaking up the preferences of the lowest patient on the priority list, since whenever a cycle is found we will again look for the opportunities for the patient with the highest priority who is still not assigned. 
+
+\subsection{Pseudocode}
+The following pseudocode is in addition to the pseudocode from question a,
+
+\begin{algorithm}[H]
+    Start\;
+    Reassign preferences for non-assigned patients to the most preferred available option\;
+    Find all cycles $C$\;    
+    \uIf{cycles exist}{
+        \uIf{cycles of length less than or equal to $q$ exist}{
+                Assign patients in the cycle accordingly\;
+                Remove assigned patients from the patient list\;
+                Return to Start\;}
+        \Else{
+            Find the patient $t$ with the highest priority in $C$ with best available preference $p_t^*$\; %This patient is in a cycle of length >3
+            Set $p_t \coloneqq p_t^*$\;
+            STEP Y: Set $p_t$ to the next preferred option $p_t'$ of patient $t$ (``break'' their current preference)\;
+            \uIf{$p_t$ is $w$}{
+                % Fairness: move on
+                Reset $p_t$ to $p_t^*$\;
+                Find the patient $t' \neq t$ with the highest priority in $C$\; 
+                Set $t$ to $t'$\;
+                Return to Step Y\; % only big cycles in C; so break in step Y
+            }
+            \uElseIf{$p_t$ is an available kidney}{
+                Assign $p_t$ to patient $t$\;
+                Remove $p_t$ from and add $k_t$ to the list of available kidneys\;
+                Remove $t$ from patient list\;
+                Return to Start\; % New cycles might become available to to reassignment
+            }
+            \Else{
+                % Possibly new cycle with t has been formed by reallocating preferences of t
+                Find all cycles\; 
+               \uIf{t is in cycle}{ 
+                    \uIf{length cycle $t$ is less than or equal to q}{Assign patients in the cycle accordingly\;
+                    Remove assigned patients from the patient list\;
+                    Return to Start\;}
+                    \Else{
+                        Return to step Y\;
+                    } % Length cycle too large: break!
+                }  
+                \Else{
+                    Return to step Y\;
+                } % t is not in cycle: break!
+            } 
+        }        
+                % If no cycles found, then the while loop is not entered and we continue to Step Y. --> Not possible since has to be one of the three options?
+                % Don't return to start because if this reassignment causes no cycles to exist, we want to "continue breaking"
+    }
+    \Else{
+        Use w-chain finder algorithm \ref{wchain}
+        \todo[inline]{TOEVOEGEN VANUIT a}
+    }
+    
+   
+\caption{Highest Priority-Breaking Method (HPBM) for TTCC\label{HPBM}}
+\end{algorithm}
+\newpage
+
+\section{Question c}
+\subsection{Strategy Proof}
+By a counter example, it will be shown that the algorithm proposed in question b is not strategy proof. Suppose we have the following (true) preference profiles:
+\begin{flalign*} 
+&\succ_{t_1} : k_4, k_3, \dots, w\\ 
+&\succ_{t_2} : k_5, k_1, \dots, w\\
+&\succ_{t_{3}} : k_1, \dots, w\\
+&\succ_{t_{4}} : k_2, \dots,w \\
+&\succ_{t_{5}} : k_1, \dots,w&&
+\end{flalign*}
+
+\noindent with priority list $f={1,2,3,4,5}$ and maximum cycle length $q=3$. The following cycle will be formed:
+
+\begin{equation} 
+    k_1 \rightarrow t_1 \rightarrow k_4 \rightarrow t_4 \rightarrow k_2 \rightarrow t_2 \rightarrow k_5 \rightarrow t_5 \rightarrow k_1
+\label{preferences_sp}
+\end{equation}
+
+\noindent This cycle contains four patient-donor pairs and, hence, is not possible to be removed. According to the HPBM, the link between $t_1$ and $k_4$ has to be broken and $t_1$ gets assigned to its next preference: $k_3$. Since $t_3$ prefers $k_1$ the most, a new cycle is formed:
+
+\[k_1 \rightarrow t_1 \rightarrow k_3 \rightarrow t_3 \rightarrow k_1\]
+
+\noindent This cycle has a length of two and would therefore be removed according the algorithm, leading to $t_1$ receiving $k_3$.
+\\ \\
+Now consider the case where $\succ_{t_1}^* = k_4, w, k_3, \dots$, so $t_1$ reports a preference profile that is not consistent with their true preferences. If this preference profile leads to $t_1$ receiving a better kidney than it would prove that the HPBM is not strategy proof.
+\\ \\
+Note that, the same (too lengthy) cycle (\ref{preferences_sp}) would be formed again. After breaking the link between $t_1$ and $k_{4}$, $t_1$'s next preference would be the waiting list:
+\[k_1 \rightarrow t_1 \rightarrow w \]
+
+\noindent Since we do not assign patients to $w$ via the HPBM, unless it is their highest preference to begin with, the algorithm then continues to the next highest priority patient inside a cycle and resets all earlier assignments which did not lead to a cycle of a length of at most 3. This leads to the link between $t_2$ and $k_5$ being broken so that their next highest preference is $k_1$. This leads to the following cycle:
+
+\[k_2 \rightarrow t_2 \rightarrow k_1 \rightarrow t_1 \rightarrow k_4 \rightarrow t_4 \rightarrow k_2\]
+
+\noindent This cycle has a length of three and is therefore removed. In this cycle, note that $t_1$ is assigned to $k_4$, which they preferred above $k_3$. Hence by adjusting the order of its preference, $t_1$ got a higher preferred kidney. This means the HPBM is not strategy proof.
+
+\subsection{Pareto Efficient}
+An algorithm is Pareto efficient if there exists no other matching that would assign all individuals to a better or the same preferred choice and one to a better choice. Also for Pareto efficiency a counter example will be given to show that the algorithm does not fulfill this condition. Suppose we have the following (true) preference profiles:
+
+\begin{flalign*} 
+&\succ_{t_1} : k_2, k_4, \dots,w \\ 
+&\succ_{t_2} : k_3, \dots,w \\
+&\succ_{t_3} : k_4, w \\
+&\succ_{t_4} : k_1, \dots, w  &&
+\end{flalign*}
+
+\noindent with priority list $f={1,2,3,4}$ and maximum cycle length $q=3$. The cycle found in this group is:
+\begin{equation}
+    k_1 \rightarrow t_1 \rightarrow k_2 \rightarrow t_2 \rightarrow k_{3} \rightarrow t_3 \rightarrow k_4 \rightarrow t_{4} \rightarrow k_1
+\label{preferences_pe}
+\end{equation}
+
+\noindent The link between $t_1$ and $k_2$ will be broken according to the constriction of cycle length. The next preference of $t_1$ is $k_4$, leading to a new cycle and $w$-chain as follows:
+
+\[k_1 \rightarrow t_1 \rightarrow k_4 \rightarrow t_4 \rightarrow k_1~~\mathrm{and}~~k_2 \rightarrow t_2 \rightarrow k_3 \rightarrow t_3 \rightarrow w\]
+
+\noindent The corresponding matching is found in Table \ref{table_pe}.
+\\ \\
+For the HPBM to be Pareto efficient, there cannot be another matching where at least one patient would get a better kidney and no other patient would get a worse one. In Table \ref{table_pe}, the matching of some 'Model X' assigns $t_1$ to $k_2$ instead of $k_4$, while the other patients get the same kidney as in the HPBM. Since $t_1$ prefers $k_2$ over $k_4$ and none of the other patients gets a less preferred kidney, the HPBM algorithm is not Pareto efficient.
+
+\begin{table}[H]
+\centering
+    \begin{tabular}{lllll}
+        \toprule
+        ~       & $t_1$ & $t_2$ & $t_3$ & $t_4$\\
+        \midrule
+        HPBM    & $k_4$ & $k_3$ & $w$   & $k_1$ \\ 
+        Model X & $k_2$ & $k_3$ & $w$   & $k_1$ \\ 
+        \bottomrule
+    \end{tabular}
+\caption{Matchings according to the HPBM and some unknown model X}
+\label{table_pe}
+\end{table}
+
+\appendix
+\section{Appendix}
+\subsection{Question a}
+
+\begin{table}[H]
+	\begin{tabular}{llllllllllllllll}
+        \toprule
+        patient & 1  & 2  & 3  & 4  & 5  & 6  & 7  & 8  & 9  & 10  & 11  & 12 & 13 & 14 & 15 \\ \midrule
+        kidney  & 68 & 96 & 20 & 15 & 97 & 85 & 12 & 44 & 90 & 114 & 105 & 27 & 67 & 22 & 21 \\
+        \bottomrule
+
+        \toprule
+        patient & 16 & 17 & 18 & 19 & 20 & 21 & 22  & 23 & 24 & 25 & 26 & 27 & 28 & 29  & 30  \\ \midrule
+        kidney  & 47 & 63 & 64 & 19 & 80 & 74 & 123 & 82 & 83 & 25 & 89 & 38 & 59 & 129 & 112 \\
+        \bottomrule
+
+        \toprule
+        patient & 31 & 32  & 33 & 34  & 35 & 36 & 37  & 38 & 39 & 40 & 41  & 42  & 43 & 44  & 45  \\ \midrule
+        kidney  & 61 & 101 & 36 & 134 & 35 & 18 & 138 & 52 & 2  & 66 & 146 & 139 & 62 & 102 & 100 \\
+        \bottomrule
+
+        \toprule
+        patient & 46 & 47  & 48  & 49 & 50 & 51 & 52 & 53 & 54  & 55  & 56  & 57  & 58  & 59  & 60 \\ \midrule
+        kidney  & 84 & 148 & 141 & 8  & 10 & 70 & 23 & 26 & 119 & 135 & 107 & 117 & 103 & 125 & 92 \\ 
+        \bottomrule
+        
+        \toprule
+        patient & 61 & 62 & 63 & 64  & 65  & 66 & 67 & 68 & 69 & 70 & 71 & 72  & 73 & 74 & 75 \\ \midrule
+        kidney  & 91 & 98 & 33 & 131 & 121 & 81 & 73 & 94 & 41 & 79 & 6  & 142 & 13 & 17 & 50 \\ 
+        \bottomrule
+
+        \toprule
+        patient & 76  & 77 & 78  & 79  & 80 & 81 & 82  & 83 & 84  & 85  & 86 & 87  & 88  & 89 & 90 \\ \midrule
+        kidney  & 124 & 87 & 136 & 130 & 1  & 75 & 147 & 49 & 126 & 127 & 86 & 110 & 108 & 37 & 28 \\ 
+        \bottomrule
+
+        \toprule
+        patient & 91 & 92  & 93  & 94 & 95 & 96 & 97 & 98 & 99 & 100 & 101 & 102 & 103 & 104 & 105 \\ \midrule
+        kidney  & 48 & 109 & 145 & 30 & 93 & 71 & 77 & 43 & 39 & 88  & 16  & 11  & w   & 144 & 31 \\ 
+        \bottomrule
+
+        \toprule
+        patient & 106 & 107 & 108 & 109 & 110 & 111 & 112 & 113 & 114 & 115 & 116 & 117 & 118 & 119 & 120 \\ \midrule
+        kidney  & 24  & 54  & 120 & 45  & 5   & 128 & 58  & 60  & 53  & 3   & 69  & 78  & 65  & 122 & 113 \\ 
+        \bottomrule
+        
+        \toprule
+        patient & 121 & 122 & 123 & 124 & 125 & 126 & 127 & 128 & 129 & 130 & 131 & 132 & 133 & 134 & 135 \\ \midrule
+        kidney  & 7   & 4   & 143 & 99  & 34  & 140 & 115 & 46  & 116 & w   & 56  & 149 & 106 & 9   & 55 \\
+        \bottomrule
+
+        \toprule
+        patient & 136 & 137 & 138 & 139 & 140 & 141 & 142 & 143 & 144 & 145 & 146 & 147 & 148 & 149 &  \\ \midrule
+        kidney  & 104 & 133 & 40  & 132 & 111 & 137 & 72  & 51  & 57  & 95  & 29  & 76  & 32  & 42  & \\
+        \bottomrule
+	\end{tabular}
+	\caption{TTCC algorithm with chain selection rule (e)}
+	\label{final.a}
+\end{table}
+
+\subsection{Question b}
+
+Unfortunately, we were unable to completely debug our code for the HPBM approach to this assignment in time. As such, we were only able to retrieve the following allocations for 36 patients, which include x cycles of length less than or equal to 3 and one w-chain (starting with patient 1 and ending up at patient 103).
+\todo[inline]{Count how many cycles we have here}
+
+\begin{table}[H]
+	\begin{tabular}{llllllllllllllll}
+        \toprule
+        patient & 1  & 4  & 5  & 9   & 10 & 12  & 15 & 17 & 21 & 28  & 30  & 31  & 45 & 46  & 47 \\ \midrule
+        kidney  & 68 & 15 & 97 & 101 & 60 & 109 & 4  & 21 & 90 & 93  & 112 & 105 & 48 & 111 & 28 \\
+        \bottomrule
+ 
+        \toprule
+        patient & 48 & 55  & 58  & 60 & 68 & 74 & 77 & 88 & 92 & 93 & 94 & 97 & 101 & 103 & 105 \\ \midrule
+        kidney  & 45 & 135 & 103 & 92 & 94 & 17 & 5  & 88 & 10 & 47 & 30 & 77 & 134 & $w$ & 31  \\
+        \bottomrule
+
+        \toprule
+        patient & 109 & 111 & 112 & 128 & 134 & 135 \\ \midrule
+        kidney  & 12  & 128 & 58  & 46  & 9   & 55  \\
+        \bottomrule
+	\end{tabular}
+	\caption{HPBM algorithm with chain selection rule (e)}
+	\label{final.b}
+\end{table}
+
+\end{document}
