@@ -29,6 +29,21 @@ import_data = function(file_location) {
               "w" = w))
 }
 
+uniquefy_list = function(lst) {
+  # Given a named list, retains the unique entries. This is different from the
+  # unique() function since that function only considers (unnamed) values of a
+  # list
+  
+  list_unique = c()
+  
+  for (i in 1:length(lst)) {
+    if (!lst[i] %in% list_unique) {
+      list_unique = c(list_unique, lst[i])
+    }
+  }
+  return(list_unique)
+}
+
 # Find all circles C;
 circle_finder = function(current_assignment, w){
   circles = list()
@@ -58,6 +73,7 @@ circle_finder = function(current_assignment, w){
     
     if (points_to == names(current_assignment)[i]) {
       # This patient points to themselves, assign this
+      
       circle = current_chain
       circles = c(circles, list(circle))
       
@@ -76,10 +92,11 @@ circle_finder = function(current_assignment, w){
     
     # Set the next patient to the one corresponding to the preferred kidney
     next_patient = current_assignment[points_to]
-    current_chain = append(current_chain, next_patient)
+    current_chain = uniquefy_list(append(current_chain, next_patient))
     
     while (TRUE) {
-      if (next_patient %in% unlist(circles)) {
+      
+      if (next_patient %in% names(unlist(circles))) {
         # This will lead to a circle already found before: skip
         checked = append(current_chain, next_patient)
         already_checked = append(already_checked, unique(names(checked)))
@@ -90,13 +107,35 @@ circle_finder = function(current_assignment, w){
       } else if (next_patient %in% names(unlist(chains))) {
         # This will extend an existing chain or will be a new branch.
         # TODO: Write this (!!!!!!!!!!!!!!)
+        
+        
+        for (i in 1:length(chains)) {
+          chain = chains[[i]]
+          
+          if (next_patient %in% names(chain)) {
+            selected_chain = chain
+            which_chain = i
+            break
+          }
+        }
+        
+        ind = which(next_patient == names(selected_chain))
+        new_chain = uniquefy_list(append(next_patient,
+                                         selected_chain[
+                                           ind:length(selected_chain)]))
+        
+        if (ind == 1) {
+          # Delete original chain and add this one instead
+          chains[[which_chain]] = new_chain
+        } else {
+          chains = append(chains, list(new_chain))
+        }
+        
         checked = append(current_chain, next_patient)
-        already_checked = append(already_checked, checked)
+        already_checked = append(already_checked, unique(names(checked)))
         already_found = TRUE
         break
-      }
-      
-      if (next_patient %in% names(current_chain)) {
+      } else if (next_patient %in% names(current_chain)) {
         # Circle found
         
         # Check where it is linked to, don't keep the patients before this (appendix to the cycle)
@@ -107,22 +146,20 @@ circle_finder = function(current_assignment, w){
         
         already_checked = append(already_checked, unique(names(circle)))
         break
-      }
-      
-      if (next_patient == w) {
+      } else if (next_patient == w) {
         # w-chain found
         w_chain = append(current_chain, next_patient)
         
         already_checked = append(already_checked, unique(names(w_chain)))
         break
+      } else {
+        # No circle or w-chain is found with this iteration, so continue by
+        # extending the chain with the patient that is being pointed to.
+        current_chain = uniquefy_list(append(current_chain, next_patient))
+        
+        # Find patient that this next patient prefers
+        next_patient = current_assignment[as.character(next_patient)]
       }
-      
-      # No circle or w-chain is found with this iteration, so continue by
-      # extending the chain with the patient that is being pointed to.
-      current_chain = append(current_chain, next_patient)
-      
-      # Find patient that this next patient prefers
-      next_patient = current_assignment[as.character(next_patient)]
     }
     
     if (already_found) {
@@ -160,8 +197,6 @@ chain_assigner = function(final_assignment = list(), chains, f,
   in_chain = names(unlist(chains))
   
   # Find the person highest on the priority list
-  print("chains")
-  print(chains)
   index = which.min(match(in_chain, f))
   highest_priority = in_chain[index]
   
@@ -272,7 +307,7 @@ hpbm = function(circles, preferences, assigned_patients, patient_names,
   patients_in_circles = unique(names(unlist(circles)))
   candidates = patients_in_circles
   
-  # Return here
+  # Initialise patient
   t = f[min(match(candidates, f), na.rm = TRUE)]
   p_star = current_assignment[as.character(t)]
   not_allowed = c(unlist(assigned_patients), p_star[[1]])
@@ -292,7 +327,16 @@ hpbm = function(circles, preferences, assigned_patients, patient_names,
       # Continue with the next highest priority patient (remove t from
       # candidates)
       candidates = candidates[-1]
-      t = f[min(match(candidates, f), na.rm = TRUE)]
+      
+      # print("sssssssssssssss")
+      # print(candidates)
+      # print(match(as.numeric(candidates), f))
+      # print("xxxxxxxxxxxxxxx")
+      
+      # Find next patient
+      t = f[min(match(as.numeric(candidates), f), na.rm = TRUE)]
+      p_star = current_assignment[as.character(t)]
+      not_allowed = c(unlist(assigned_patients), p_star[[1]])
       
     } else if (p_prime %in% available_kidneys) {
       # Remove p_prime from kidneys and add t
@@ -308,6 +352,7 @@ hpbm = function(circles, preferences, assigned_patients, patient_names,
       
     } else {
       # Find circles
+      # TODO: Remove my_data
       my_data = list("current_assignment" = current_assignment,
                      "w" = w)
 
@@ -456,11 +501,12 @@ while (length(outcome$final_assignment) != length(data$f)) {
                      f = data$f,
                      w = data$w)
   print("Next run")
+  outcome$assignment = uniquefy_list(outcome$final_assignment)
+  print(outcome$final_assignment)
   # print(length(outcome$final_assignment))
   # print(length(data$f))
-  print(outcome$final_assignment)
 }
 
-assignment = outcome$final_assignment[!duplicated(outcome$final_assignment)]
-# print(assignment)
+assignment = uniquefy_list(outcome$final_assignment)
+print(assignment)
 
