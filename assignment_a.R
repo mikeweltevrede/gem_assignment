@@ -2,7 +2,7 @@
 # Group 7
 # With chain selection (e)
 #### Clean environment
-rm()
+rm(list = ls())
 
 #### installing packages ####
 library(readxl)
