@@ -126,7 +126,8 @@ circle_finder <- function(data){
         # Reassign arrows and recheck circles
         for (k in 1:length(current_assignment)) {
           index.X <- as.numeric(names(current_assignment)[k])
-          index.Y <- !preferences[index.X, ] %in% assigned[which(!assigned %in% available_kidneys)]
+          index.Y <- !preferences[index.X, ] %in% assigned[
+            which(!assigned %in% available_kidneys)]
           current_assignment[k] <- 
             preferences[index.X, index.Y][1]
         }
