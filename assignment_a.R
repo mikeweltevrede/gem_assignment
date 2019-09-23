@@ -1,36 +1,51 @@
-# Assignment Games and Economic Models
-# Group 7
-# With chain selection (e)
-#### Clean environment
-rm()
+#### Initialise document ####
+#'Assignment Games and Economic Models
+#'@author Steffie van Poppel, Mike Weltevrede, Joost Westland (Group 7)
 
-#### installing packages ####
+# Clean environment
+rm(list = ls())
+
+# Activating packages
 library(readxl)
 library(bazar)
 
-#### importing the data ####
+#### Defining functions ####
+
+#'Import and process data
+#'
+#'\code{import_data} reads data and does some basic cleaning and computations.
+#'
+#'@param \code{file_location} The path to the data to read in.
+#'
+#'@return A list \code{f} containing the priority ordering (which is computed as
+#'  the ascending order of patient numbers), the numeric encoding \code{w}
+#'  for the waiting list  (which is computed as the maximum patient number plus
+#'  1), the matrix with \code{preferences}, a list \code{current_assignment}
+#'  with currently favourite kidneys, an empty list \code{final_assignment}
+#'  with patient numbers as names to store the final assignment, an empty vector
+#'  \code{assigned} to store the patients that are assigned, and an empty vector
+#'  \code{available_kidneys} to store the kidneys that become available due to
+#'  assigning w-chains
 import_data <- function(file_location) {
+  
   data <- readxl::read_excel(file_location, .name_repair = "minimal")
-  if (colnames(data)[1]!="Patient"){
-    colnames(data)[1]<-"Patient"
-  }
   
+  colnames(data)[1] <- "Patient"
   
-  # Define the priority ordering f
+  # Define the priority ordering f (ascending order of patient number)
   f <- sort(data$Patient)
   number_of_patients <- max(f)
   
   # Define which patient ID codes for the waiting list (maximum patient ID + 1)
   w <- number_of_patients + 1
   
+  # Define patient names as the character variant of their patient number
   colnames(data) <- append("Patient", as.character(1:w))
   patient_names <- as.character(data$Patient)
 
   # Define preference profiles; i.e. all data except for patient ID
   preferences <- data[, -1]
-  rm(data) # Clean up; `data` is not needed in the rest of this function
-  
-  #### Step 1 ####
+
   # Initialise kidneys and living donors
   
   # Make patients point to kidneys
@@ -43,228 +58,342 @@ import_data <- function(file_location) {
   names(final_assignment) <- patient_names
   final_assignment <- as.list(final_assignment) 
   
-  # Initialise set of currently assigned kidneys
-  assigned <- c()
-  available_kidneys<-c()
-  
   return(list("f" = f,
               "w" = w,
               "preferences" = preferences,
               "current_assignment" = current_assignment,
               "final_assignment" = final_assignment,
-              "assigned" = assigned,
-              "available_kidneys"=available_kidneys))
-}#return initial values
+              "assigned" = c(),
+              "available_kidneys" = c()))
+}
 
-
-
-# Step 2
-# a
-# Search for cycle
-circle_finder <- function(data){#notice we use circle instead of cycle, since cycle is a function in R
+#'Search for cycles
+#'
+#'\code{circle_finder} finds circles in the current preferences of patients,
+#'assigns these, and updates the variables accordingly. Notice that we use the
+#'term circle instead of cycle, since \code{cycle()} is a function in R.
+#'
+#'@param \code{data} List with structure like the output of \code{import_data}.
+#'
+#'@return A list \code{f} containing the priority ordering, the numeric encoding
+#'  \code{w} for the waiting list, the matrix with \code{preferences}, a list
+#'  \code{current_assignment} with currently favourite kidneys, a list
+#'  \code{final_assignment} the currently final assignment, a vector
+#'  \code{assigned} with patients that are already assigned, and a vector
+#'  \code{available_kidneys} with kidneys that become available due to
+#'  assigning w-chains.
+circle_finder <- function(data){
+  
+  # Unpack the list
   f <- data$f
   w <- data$w
   preferences <- data$preferences
   current_assignment <- data$current_assignment
   final_assignment <- data$final_assignment
   assigned <- data$assigned
-  available_kidneys<-data$available_kidneys
+  available_kidneys <- data$available_kidneys
   
   rm(data) # Clean up; `data` is not needed in the rest of this function
   
-  circle_found <- T # Initialise
+  circle_found <- TRUE # Initialise
   
-  while (circle_found) { #as long as cycles exist in the current assignment
-    new_assigned <- c() # Initialise
-    no_circle_found_so_far <- c(w) # Initialise
+  # As long as cycles exist in the current assignment...
+  while (circle_found) {
     
-    for (i in 1:length(f)) { #for every patient
-      if (!f[i] %in% no_circle_found_so_far) {#check if the patient is already assigned, run if not assigned
-        current_chain <- c() #create an empty chain
-        j <- f[i]#becomes the current step
+    # Initialise
+    new_assigned <- c()
+    no_circle_found_so_far <- c(w)
+    
+    # For every patient in the order of priority list...
+    for (i in 1:length(f)) {
+      
+      if (!f[i] %in% no_circle_found_so_far) {
+        # Then patient is not yet assigned
         
-        while (!j %in% no_circle_found_so_far && !j %in% assigned) {#as long as j is not already assigned to something, continue
-          current_chain <- append(current_chain, j)#append the current chain
-          j <- current_assignment[[as.character(j)]]#assign new j
-          if (j==w || j %in% no_circle_found_so_far) { #if j is in  a w chain or already assigned, stop
-            no_circle_found_so_far <-
-              append(no_circle_found_so_far, current_chain) #assign to no_circle_found_so_far, when a new patient point to something that's already checked, stop
+        current_chain <- c() # Create an empty chain
+        j <- f[i] # Becomes the current step
+        
+        # As long as j is not already assigned to something...
+        while (!j %in% no_circle_found_so_far && !j %in% assigned) {
+          
+          current_chain <- append(current_chain, j)
+          j <- current_assignment[[as.character(j)]]
+          
+          if (j == w || j %in% no_circle_found_so_far) {
+            # If j is in a w-chain or already assigned, stop
+            
+            # Assign to no_circle_found_so_far, when a new patient point to
+            # something that's already checked, stop
+            no_circle_found_so_far <- append(no_circle_found_so_far,
+                                             current_chain)
           }
           
-          if (j %in% current_chain) {# when j is in the current chain we have found a cycle
-            circle <-
-              current_chain[which(current_chain == j):length(current_chain)]#construct the cycle
+          if (j %in% current_chain) {
+            # When j is in the current chain then we have found a cycle
+            circle <- current_chain[
+              which(current_chain == j):length(current_chain)]
             
             for (k in 1:length(circle)) {
-              final_assignment[[as.character(circle[k])]] <- current_assignment[[as.character(circle[k])]]
-            }#update the final result
+              # Update the final result
+              final_assignment[[as.character(circle[k])]] <-
+                current_assignment[[as.character(circle[k])]]
+            }
             
-            new_assigned <- append(new_assigned, circle)#append new_assigned, we need to update this in the current_assignment
-            no_circle_found_so_far <-
-              append(no_circle_found_so_far, current_chain)#when a patient points to the cycle, we don't need to look further for this chain.
+            # Append new_assigned, we need to update this in current_assignment
+            new_assigned <- append(new_assigned, circle)
+            
+            # When a patient points to the cycle, we don't need to look further
+            # for this chain.
+            no_circle_found_so_far <- append(no_circle_found_so_far,
+                                             current_chain)
           }
         }
       }
     }
     
-    ## If circle, kick out all circles
-    if (!is.null(new_assigned)) {#check if we have assigned anything
-      assigned <- append(assigned, new_assigned)#append assigned patients
+    # If circles exist, assign all circles
+    if (!is.null(new_assigned)) {
+      # Check if we have assigned anything
+      assigned <- append(assigned, new_assigned)
       selection <- c()
       
-      # make this to also recognise random numbers
       for (k in 1:length(new_assigned)) {
-        selection <-
-          append(selection, which(
-            as.numeric(names(current_assignment)) == new_assigned[k]))
-      }#select patients that are assigned in this loop
-      
-      selection <- -selection #select all patients that are not assigned in this loop, with the minus sign
-      current_assignment <- current_assignment[selection] #drop all assigned patients
-      f <- f[selection] #drop all assigned patients
-      
-      if (!is.empty(current_assignment)){#check if their are any patients left
-      # Reassign arrows and recheck circles
-      for (k in 1:length(current_assignment)) {#update the current assignment of all remaining patients
-        index.X <- as.numeric(names(current_assignment)[k])#only look to the remaining patients
-        index.Y<-!preferences[index.X, ] %in% assigned[which( ! assigned %in% available_kidneys)]#not allowed to point to the assigned patients, except the kidneys that remain after the w chain
-        current_assignment[k] <- 
-          preferences[index.X, index.Y][1]#update the current_assignment
+        # Select patients that are assigned in this loop
+        selection <- append(selection,
+                            which(as.numeric(
+                              names(current_assignment)) == new_assigned[k]))
       }
+      
+      # Select all patients not assigned in this loop (with the minus sign)
+      selection <- -selection 
+      
+      # Drop all assigned patients from the graph
+      current_assignment <- current_assignment[selection] 
+      f <- f[selection]
+      
+      # Check if their are any patients left
+      if (!bazar::is.empty(current_assignment)) {
+      
+        # Reassign arrows and recheck circles
+        for (k in 1:length(current_assignment)) {
+          # Only look to the remaining patients
+          index.X <- as.numeric(names(current_assignment)[k])
+          
+          # Not allowed to point to the assigned patients, except the kidneys
+          # that remain after the w chain
+          index.Y <- !preferences[index.X, ] %in% 
+            assigned[which(!assigned %in% available_kidneys)]
+          
+          current_assignment[k] <- preferences[index.X, index.Y][1]
+        }
       } else {
-        circle_found <- F# if no patients are left, exit the loop
+        # If no patients are left, exit the loop
+        circle_found <- FALSE
       }
     } else {
-      circle_found <- F #if no cycles are found, exit the loop
-      ## Check if there are pairs left
-      ### Stop
-      # Else, go to step 3
+      # If no cycles are found, exit the loop
+      circle_found <- FALSE
     }
   }
+  # Return updated data points
   return(list("f" = f,
               "w" = w,
               "preferences" = preferences,
               "current_assignment" = current_assignment,
               "final_assignment" = final_assignment,
               "assigned" = assigned,
-              "available_kidneys"=available_kidneys))
-}#return updated data points
+              "available_kidneys" = available_kidneys))
+}
 
-# Step 3
-## Else, find w-chain according to (e)
-
+#'Find w-chains
+#'
+#'\code{w_finder} finds w-chains according to chain selection rule (e) in the
+#'current preferences of patients, assigns these, and updates the variables
+#'accordingly.
+#'
+#'@param \code{data} List with structure like the output of \code{import_data}.
+#'
+#'@return A list \code{f} containing the priority ordering, the numeric encoding
+#'  \code{w} for the waiting list, the matrix with \code{preferences}, a list
+#'  \code{current_assignment} with currently favourite kidneys, a list
+#'  \code{final_assignment} the currently final assignment, a vector
+#'  \code{assigned} with patients that are already assigned, and a vector
+#'  \code{available_kidneys} with kidneys that become available due to
+#'  assigning w-chains.
 w_finder <- function(data){
+  
+  # Unpack the list
   f <- data$f
   w <- data$w
   preferences <- data$preferences
   current_assignment <- data$current_assignment
   final_assignment <- data$final_assignment
   assigned <- data$assigned
-  available_kidneys<-data$available_kidneys
+  available_kidneys <- data$available_kidneys
   
-    rm(data) # Clean up; `data` is not needed in the rest of this function
+  rm(data) # Clean up; `data` is not needed in the rest of this function
+
+  # Initialize temporary data
+  w_chain <- c()
+  new_assigned <- c()
+  already_checked <- c(w)
+  first_of_w_chain <- w
   
-    #initialize temporary data
-    w_chain <- c()
-    new_assigned<-c()
-    Already_checked<- c(w)
-    first_of_w_chain<-w
-    for (i in 1:length(f)){#search the w_chain for all patients
-      if (!f[i] %in% Already_checked) {#check if we have not yet found the current patient
-        current_chain <- c()
-        j <- f[i]#similar as in the circle finder, j is the current step in the chain
-  
-        while (!j %in% Already_checked && !j %in% assigned) {#as long as j is available run the while loop
-          current_chain <- append(current_chain, j)#append the current chain with j
-          j <- current_assignment[[as.character(j)]]#update j
-          
-          if (j==w || j %in% Already_checked) {#check if j is still avalable, otherwise update already checked and stop the loop
-            Already_checked <-
-              append(Already_checked, current_chain)
-          }
-          
-          if(j %in% available_kidneys){#check if j is a remaining kidney, patient is already assigned, but kidney not yet(first entry of w chain with highest priority)
-            index<-which(available_kidneys==j)
-            available_kidneys[index]<-current_chain[1]#update the remaing kidneys
-            for (k in 1:length(current_chain)) {#update final_assignment
-              final_assignment[[as.character(current_chain[k])]] <- current_assignment[[as.character(current_chain[k])]]
-            }
-            new_assigned<-append(new_assigned,current_chain)#update the new_assigned entries
-            Already_checked <-
-              append(Already_checked, current_chain)#update already checked
-          }
-          
-          if(j == first_of_w_chain){#when j is equal to the entry of the current w_chain with the highest priority, then we expand the w_chain
-            w_chain<-append(current_chain, w_chain)
-            if(w != first_of_w_chain){
-            Already_checked <-
-              append(Already_checked, current_chain)
-            }
-            first_of_w_chain<-w_chain[1]
-          }
-          }
+  # Search the w_chain for all patients in the order of priority list
+  for (i in 1:length(f)) {
+    
+    # Check if we have not yet found the current patient
+    if (!f[i] %in% already_checked) {
+      current_chain <- c()
+      
+      # Similar as in circle_finder, j is the current step in the chain
+      j <- f[i]
+
+      # As long as j is available...
+      while (!j %in% already_checked && !j %in% assigned) {
+        current_chain <- append(current_chain, j)
+        j <- current_assignment[[as.character(j)]]
+        
+        # Check if j is still avalable, otherwise update already checked and
+        # stop the loop
+        if (j == w || j %in% already_checked) {
+          already_checked <- append(already_checked, current_chain)
         }
-    }
-    if (!is.null(w_chain)){#check if we have found a w_chain
-    for (k in 1:length(w_chain)) {
-      final_assignment[[as.character(w_chain[k])]] <- current_assignment[[as.character(w_chain[k])]]
-    }#update final_assignment
-    if (w!=first_of_w_chain){#if w is not equal to the first_of_w_chain
-      available_kidneys<-append(available_kidneys, first_of_w_chain) #append the available kidneys
-    }
-    }
-    new_assigned<-append(new_assigned,w_chain)#append the new_assigned
-    
-    if (!is.null(new_assigned)) {#check if the new_assigned are not empty
-      assigned <- append(assigned, new_assigned)
-      selection <- c()
-      
-      #throw out, all already assinged patients
-      for (k in 1:length(new_assigned)) {
-        selection <-
-          append(selection, which(
-            as.numeric(names(current_assignment)) == new_assigned[k]))
+        
+        # Check if j is a remaining kidney, patient is already assigned, but
+        # kidney not yet (first entry of w-chain with highest priority)
+        if (j %in% available_kidneys) {
+          
+          index <- which(available_kidneys == j)
+          available_kidneys[index] <- current_chain[1]
+          
+          # Update final_assignment
+          for (k in 1:length(current_chain)) {
+            final_assignment[[as.character(current_chain[k])]] <-
+              current_assignment[[as.character(current_chain[k])]]
+          }
+          
+          # Update the new_assigned entries
+          new_assigned <- append(new_assigned, current_chain)
+          already_checked <- append(already_checked, current_chain)
+        }
+        
+        # When j is equal to the entry of the current w_chain with the highest
+        # priority, then we expand the w-chain
+        if (j == first_of_w_chain) {
+          
+          w_chain <- append(current_chain, w_chain)
+          if (w != first_of_w_chain) {
+          already_checked <- append(already_checked, current_chain)
+          }
+          first_of_w_chain <- w_chain[1]
+        }
       }
-      
-      selection <- -selection
-      current_assignment <- current_assignment[selection]
-      f <- f[selection]
-    }  
+    }
+  }
+  
+  # Check if we have found a w-chain
+  if (!is.null(w_chain)) {
     
-    
-    for (k in 1:length(current_assignment)){#update preferences, patients can only point to the first kidney of the w_chain(s), not to the other patients
-        index.X <- as.numeric(names(current_assignment)[k])
-        index.Y<-!preferences[index.X, ] %in% assigned[which( ! assigned %in% available_kidneys)]
-        current_assignment[k] <- 
-        preferences[index.X, index.Y][1]
+    # Update final_assignment
+    for (k in 1:length(w_chain)) {
+      final_assignment[[as.character(w_chain[k])]] <-
+        current_assignment[[as.character(w_chain[k])]]
     }
     
+    # If w is not equal to the first_of_w_chain...
+    if (w != first_of_w_chain) {
+      available_kidneys <- append(available_kidneys, first_of_w_chain)
+    }
+  }
+  
+  new_assigned <- append(new_assigned, w_chain)
+  
+  # Check if the new_assigned are not empty
+  if (!is.null(new_assigned)) {
+    assigned <- append(assigned, new_assigned)
+    selection <- c()
     
+    # Throw out all already assigned patients
+    for (k in 1:length(new_assigned)) {
+      selection <- append(selection, which(as.numeric(
+        names(current_assignment)) == new_assigned[k]))
+    }
+    
+    selection <- -selection
+    current_assignment <- current_assignment[selection]
+    f <- f[selection]
+  }
+  
+  # Update preferences, patients can only point to the first kidney of the
+  # w-chain(s), not to the other patients
+  for (k in 1:length(current_assignment)) {
+    
+    index.X <- as.numeric(names(current_assignment)[k])
+    index.Y <- !preferences[index.X, ] %in%
+      assigned[which(!assigned %in% available_kidneys)]
+    current_assignment[k] <- preferences[index.X, index.Y][1]
+  }
+    
+  # Return updated data
   return(list("f" = f,
               "w" = w,
               "preferences" = preferences,
               "current_assignment" = current_assignment,
               "final_assignment" = final_assignment,
               "assigned" = assigned,
-              "available_kidneys"=available_kidneys))
-}#return updated data
-
-Exercise.a<-function(location){
-iterate_data <- import_data(file_location=location)#import data, using the function that is written above
-f<-iterate_data$f #all patients that are currently assinged
-
-while (!is.empty(f)) {#as long as patients remain unassigned
-  ## Repeat 2 and 3
-  iterate_data<- circle_finder(iterate_data)#search for cycles
-  f<-iterate_data$f#update f
-  if(!is.empty(f)){#check if patients are unassigned
-    iterate_data<- w_finder(iterate_data) 
-  }
-  f<-iterate_data$f #update f
+              "available_kidneys" = available_kidneys))
 }
-iterate_data$final_assignment[which(iterate_data$final_assignment==iterate_data$w)]<-"w"#update the output, for the waiting list
-df.final<-data.frame(iterate_data$final_assignment)#create table
-colnames(df.final)<-names(iterate_data$final_assignment) #assign the right colnames
-return(list("final_assignment"=df.final, "remaining.kidneys"=iterate_data$available_kidneys))
-}#return result
-result<-Exercise.a(location="data/dataset7.xlsx")#run the algorithm
+
+#'Runs the TTCC algorithm with chain selection rule (e)
+#'
+#'\code{exercise_a} executes the TTCC algorithm with chain selection rule (e) by
+#'repeating the process of finding cycles, followed by finding w-chains until
+#'all patients are assigned
+#'
+#'@param \code{file_location} The path to the data to read in.
+#'
+#'@return A \code{data.frame} \code{final_assignment} with the final assignment
+#'for all patients and a list \code{remaining_kidneys} with the kidneys that are
+#'not assigned to a patient (as a result of their respective patient being the
+#'first patient in an assigned w-chain).
+exercise_a <- function(file_location){
+  # Import data, using the function that is written above
+  iterate_data <- import_data(file_location = file_location)
+  
+  # All patients that are currently not yet assigned
+  f <- iterate_data$f
+
+  # As long as patients remain unassigned
+  while (!bazar::is.empty(f)) {
+    
+    # Search for cycles...
+    iterate_data <- circle_finder(iterate_data)
+    
+    # And update f accordingly
+    f <- iterate_data$f
+    
+    # Check if patients are unassigned
+    if (!bazar::is.empty(f)) {
+      # Then there is a w-chain left, since all cycles were removed by
+      # circle_finder
+      iterate_data <- w_finder(iterate_data) 
+      f <- iterate_data$f #update f
+    }
+  }
+  
+  # Update the final output for the waiting list
+  iterate_data$final_assignment[
+    which(iterate_data$final_assignment == iterate_data$w)] <- "w"
+  
+  # Create tidy table
+  df.final <- data.frame(iterate_data$final_assignment)
+  colnames(df.final) <- names(iterate_data$final_assignment)
+  
+  # Return final result
+  return(list("final_assignment" = df.final,
+              "remaining_kidneys" = iterate_data$available_kidneys))
+}
+
+#### Run the algorithm ####
+result <- exercise_a(file_location = "data/dataset7.xlsx")
