@@ -3,9 +3,6 @@
 .RData
 .Ruserdata
 
-*.pdf
-
 data/
+old/
 renv/
-
-*brainstorm.md

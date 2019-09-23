@@ -36,6 +36,12 @@
       "Source": "CRAN",
       "Hash": "2a78bf0825e0088e117520553ceb7fa5"
     },
+    "base64enc": {
+      "Package": "base64enc",
+      "Version": "0.1-3",
+      "Source": "CRAN",
+      "Hash": "d355963b4b1c3039bfe8d65611a11cca"
+    },
     "bazar": {
       "Package": "bazar",
       "Version": "1.0.11",
@@ -78,6 +84,12 @@
       "Source": "CRAN",
       "Hash": "a7a9b2ae023bf012744c480d3388c0c8"
     },
+    "evaluate": {
+      "Package": "evaluate",
+      "Version": "0.14",
+      "Source": "CRAN",
+      "Hash": "5a6c1949963e0785dbcbb0556337d61e"
+    },
     "fansi": {
       "Package": "fansi",
       "Version": "0.4.0",
@@ -90,11 +102,29 @@
       "Source": "CRAN",
       "Hash": "e8436e647719b7c9d01409767cd88cc8"
     },
+    "highr": {
+      "Package": "highr",
+      "Version": "0.8",
+      "Source": "CRAN",
+      "Hash": "43e36bc8bca1d8256f86933659c46349"
+    },
     "hms": {
       "Package": "hms",
       "Version": "0.5.1",
       "Source": "CRAN",
       "Hash": "5c9cbb0d6f49109be1a771d963801847"
+    },
+    "htmltools": {
+      "Package": "htmltools",
+      "Version": "0.3.6",
+      "Source": "CRAN",
+      "Hash": "5132526e7fb28a2c20d1ef443d5c4644"
+    },
+    "jsonlite": {
+      "Package": "jsonlite",
+      "Version": "1.6",
+      "Source": "CRAN",
+      "Hash": "b7e67b6a7bc2fdae729c0f3ff9026a8a"
     },
     "kimisc": {
       "Package": "kimisc",
@@ -102,17 +132,35 @@
       "Source": "CRAN",
       "Hash": "3946666aed50490bfef992e573268a4e"
     },
+    "knitr": {
+      "Package": "knitr",
+      "Version": "1.24",
+      "Source": "CRAN",
+      "Hash": "4d5213d0ec43d3ef3415177faa434602"
+    },
     "magrittr": {
       "Package": "magrittr",
       "Version": "1.5",
       "Source": "CRAN",
       "Hash": "dee1d97cffddfd3ed969e224bd0826d0"
     },
+    "markdown": {
+      "Package": "markdown",
+      "Version": "1.1",
+      "Source": "CRAN",
+      "Hash": "80e1f73841614fa35f82a85d66fb41da"
+    },
     "memoise": {
       "Package": "memoise",
       "Version": "1.1.0",
       "Source": "CRAN",
       "Hash": "22ca9b285c10f5dd8c4d1e90231ce558"
+    },
+    "mime": {
+      "Package": "mime",
+      "Version": "0.7",
+      "Source": "CRAN",
+      "Hash": "908d95ccbfd1dd274073ef07a7c93934"
     },
     "pillar": {
       "Package": "pillar",
@@ -174,6 +222,12 @@
       "Source": "CRAN",
       "Hash": "8f1bf3a54c8844dc254baabba61cb6a9"
     },
+    "rmarkdown": {
+      "Package": "rmarkdown",
+      "Version": "1.15",
+      "Source": "CRAN",
+      "Hash": "7009ca49bab0c053098ae99b595bbacb"
+    },
     "stringi": {
       "Package": "stringi",
       "Version": "1.4.3",
@@ -192,6 +246,12 @@
       "Source": "CRAN",
       "Hash": "a8d41bd284e21ab7e776d228dc5bac91"
     },
+    "tinytex": {
+      "Package": "tinytex",
+      "Version": "0.16",
+      "Source": "CRAN",
+      "Hash": "9349f30ae6ddce61d7fa26f7b6228a73"
+    },
     "utf8": {
       "Package": "utf8",
       "Version": "1.1.4",
@@ -203,6 +263,18 @@
       "Version": "0.2.0",
       "Source": "CRAN",
       "Hash": "4bdc6a6c4c5a434d880b73817d4ea641"
+    },
+    "xfun": {
+      "Package": "xfun",
+      "Version": "0.9",
+      "Source": "CRAN",
+      "Hash": "f577b2b637a64f3b5662430ccc6fa1b7"
+    },
+    "yaml": {
+      "Package": "yaml",
+      "Version": "2.2.0",
+      "Source": "CRAN",
+      "Hash": "3a313c96061c4ac790de611dc57ebd1f"
     },
     "zeallot": {
       "Package": "zeallot",
