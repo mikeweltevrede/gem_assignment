@@ -1,5 +1,5 @@
 #### Initialise document ####
-#'Assignment Games and Economic Models
+#'Assignment Games and Economic Models  - Question A
 #'@author Steffie van Poppel, Mike Weltevrede, Joost Westland (Group 7)
 
 # Clean environment

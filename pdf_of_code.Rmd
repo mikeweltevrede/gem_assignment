@@ -1,6 +1,6 @@
 ---
 title: "GEM Assignment Source Code"
-author: "Group 7"
+author: "Steffie van Poppel, Mike Weltevrede, Joost Westland (Group 7)"
 date: "9/21/2019"
 output: pdf_document
 ---
@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 #### Initialise document ####
-#'Assignment Games and Economic Models
+#'Assignment Games and Economic Models - Question A
 #'@author Steffie van Poppel, Mike Weltevrede, Joost Westland (Group 7)
 
 # Clean environment
