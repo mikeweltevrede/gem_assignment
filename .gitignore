@@ -3,6 +3,8 @@
 .RData
 .Ruserdata
 
+*.zip
+
 data/
 old/
 renv/
