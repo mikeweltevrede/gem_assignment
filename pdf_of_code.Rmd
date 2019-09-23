@@ -1,3 +1,17 @@
+---
+title: "GEM Assignment Source Code"
+author: "Group 7"
+date: "9/21/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question a
+
+```{r}
 # Assignment Games and Economic Models
 # Group 7
 # With chain selection (e)
@@ -7,7 +21,9 @@ rm(list = ls())
 #### installing packages ####
 library(readxl)
 library(bazar)
+```
 
+```{r}
 #### importing the data ####
 import_data <- function(file_location) {
   data <- readxl::read_excel(file_location, .name_repair = "minimal")
@@ -54,7 +70,9 @@ import_data <- function(file_location) {
               "assigned" = assigned,
               "available_kidneys" = available_kidneys))
 }
+```
 
+```{r}
 # Step 2
 # a
 # Check if circle
@@ -146,7 +164,9 @@ circle_finder <- function(data){
               "assigned" = assigned,
               "available_kidneys" = available_kidneys))
 }
+```
 
+```{r}
 # Step 3
 ## Check if there are pairs left
 ### Stop
@@ -249,7 +269,9 @@ w_finder <- function(data){
               "assigned" = assigned,
               "available_kidneys" = available_kidneys))
 }
+```
 
+```{r}
 Exercise.a <- function(location){
   iterate_data <- import_data(file_location = location)
   f <- iterate_data$f
@@ -283,3 +305,9 @@ Exercise.a <- function(location){
 }
 
 result <- Exercise.a(location = "data/dataset7.xlsx")
+```
+
+## Question b
+
+```{r}
+```
